@@ -26,3 +26,8 @@ export async function toggleAdmin(id: string, isAdmin: boolean): Promise<Omit<Us
   const response = await axios.patch(`${ADMIN_BASE}/${id}`, { isAdmin }, { headers: authHeaders() })
   return response.data as Omit<User, 'token'>
 }
+
+export async function createUser(username: string, password: string, isAdmin: boolean): Promise<Omit<User, 'token'>> {
+  const response = await axios.post(ADMIN_BASE, { username, password, isAdmin }, { headers: authHeaders() })
+  return response.data as Omit<User, 'token'>
+}

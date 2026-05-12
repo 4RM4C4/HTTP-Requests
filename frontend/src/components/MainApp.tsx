@@ -66,6 +66,7 @@ export function MainApp({ user, onLogout }: Props) {
           isOpen={adminOpen}
           onClose={() => setAdminOpen(false)}
           currentUserId={user.id}
+          onSelfDelete={onLogout}
         />
       )}
     </div>

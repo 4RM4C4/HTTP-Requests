@@ -1,6 +1,7 @@
 const logger = require('./logger')
 const config = require('./config')
 const jwt = require('jsonwebtoken')
+const User = require('../models/user')
 
 const requestLogger = (request, response, next) => {
   logger.info('Method:', request.method)
@@ -36,12 +37,17 @@ const tokenExtractor = (request, response, next) => {
   next()
 }
 
-const userExtractor = (request, response, next) => {
-  const decodedToken = jwt.verify(request.token, config.SECRET)
-  if (decodedToken.id) {
-    request.user = decodedToken
+const userExtractor = async (request, response, next) => {
+  try {
+    const decodedToken = jwt.verify(request.token, config.SECRET)
+    if (!decodedToken.id) return response.status(401).json({ error: 'Token missing user id' })
+    const user = await User.findByPk(decodedToken.id)
+    if (!user) return response.status(401).json({ error: 'User no longer exists' })
+    request.user = { id: user.id, username: user.username, isAdmin: user.isAdmin }
+    next()
+  } catch (error) {
+    next(error)
   }
-  next()
 }
 
 const adminExtractor = (request, response, next) => {

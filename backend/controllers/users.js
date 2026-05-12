@@ -8,23 +8,26 @@ const safeUser = (user) => {
   return rest
 }
 
-// POST /api/users — public registration
-usersRouter.post('/', async (request, response, next) => {
-  const { username, password } = request.body
-  if (!password || password.length < 3) {
-    return next({
-      name: 'ValidationError',
-      message: 'Password must be at least 3 characters long',
-    })
-  }
-  try {
-    const passwordHash = await bcrypt.hash(password, 10)
-    const user = await User.create({ username, passwordHash })
-    response.status(201).json(safeUser(user))
-  } catch (error) {
-    next(error)
-  }
-})
+// POST /api/users — admin only: create a user with optional isAdmin flag
+usersRouter.post(
+  '/',
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  middleware.adminExtractor,
+  async (request, response, next) => {
+    const { username, password, isAdmin = false } = request.body
+    if (!password || password.length < 3) {
+      return next({ name: 'ValidationError', message: 'Password must be at least 3 characters long' })
+    }
+    try {
+      const passwordHash = await bcrypt.hash(password, 10)
+      const user = await User.create({ username, passwordHash, isAdmin })
+      response.status(201).json(safeUser(user))
+    } catch (error) {
+      next(error)
+    }
+  },
+)
 
 // GET /api/users — admin only
 usersRouter.get(
@@ -42,7 +45,9 @@ usersRouter.get(
   },
 )
 
-// DELETE /api/users/:id — admin only, cannot delete self
+// DELETE /api/users/:id — admin only
+// Allowed: delete own account OR delete a non-admin user
+// Blocked: delete another admin
 usersRouter.delete(
   '/:id',
   middleware.tokenExtractor,
@@ -50,12 +55,14 @@ usersRouter.delete(
   middleware.adminExtractor,
   async (request, response, next) => {
     const { id } = request.params
-    if (id === request.user.id) {
-      return response.status(400).json({ error: 'Cannot delete your own account' })
-    }
+    const isSelf = id === request.user.id
     try {
-      const deleted = await User.destroy({ where: { id } })
-      if (deleted === 0) return response.status(404).json({ error: 'User not found' })
+      const target = await User.findByPk(id)
+      if (!target) return response.status(404).json({ error: 'User not found' })
+      if (!isSelf && target.isAdmin) {
+        return response.status(403).json({ error: 'Cannot delete another admin account' })
+      }
+      await target.destroy()
       response.status(204).end()
     } catch (error) {
       next(error)
@@ -63,7 +70,9 @@ usersRouter.delete(
   },
 )
 
-// PATCH /api/users/:id — admin only, toggle isAdmin (cannot change own status)
+// PATCH /api/users/:id — admin only
+// Allowed: promote non-admin to admin
+// Blocked: demote an admin (isAdmin cannot go from true to false)
 usersRouter.patch(
   '/:id',
   middleware.tokenExtractor,
@@ -71,12 +80,12 @@ usersRouter.patch(
   middleware.adminExtractor,
   async (request, response, next) => {
     const { id } = request.params
-    if (id === request.user.id) {
-      return response.status(400).json({ error: 'Cannot change your own admin status' })
-    }
     try {
       const user = await User.findByPk(id)
       if (!user) return response.status(404).json({ error: 'User not found' })
+      if (user.isAdmin && request.body.isAdmin === false) {
+        return response.status(403).json({ error: 'Cannot remove admin role from an admin user' })
+      }
       await user.update({ isAdmin: request.body.isAdmin })
       response.json(safeUser(user))
     } catch (error) {
