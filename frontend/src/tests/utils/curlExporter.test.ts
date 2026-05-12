@@ -73,8 +73,8 @@ describe('generateCurlCommand', () => {
       method: 'POST',
       bodyType: 'form-data',
       formData: [
-        { key: 'username', value: 'alice', enabled: true },
-        { key: 'hidden', value: 'nope', enabled: false },
+        { id: '1', key: 'username', value: 'alice', type: 'text' as const, enabled: true },
+        { id: '2', key: 'hidden', value: 'nope', type: 'text' as const, enabled: false },
       ],
     })
     const result = generateCurlCommand(request, 'https://example.com/upload')

@@ -3,12 +3,16 @@ services:
     build:
       context: .
       args:
-        # Pass build-time frontend variables
-        VITE_HTTPREQUEST: ${VITE_HTTPREQUEST:-http://localhost:3001/api/requests}
-        VITE_HTTPREQUESTLOGIN: ${VITE_HTTPREQUESTLOGIN:-http://localhost:3001/api/login}
+        # Relative paths work from any IP — no need to hardcode the Pi's address
+        VITE_HTTPREQUEST: ${VITE_HTTPREQUEST:-/api/requests}
+        VITE_HTTPREQUESTLOGIN: ${VITE_HTTPREQUESTLOGIN:-/api/login}
     ports:
-      - "${PORT:-3001}:3001"
+      - "${HOST_PORT:-3001}:3001"
+    environment:
+      # Force container to always use 3001 (overrides PORT in backend/.env)
+      PORT: 3001
+      NODE_ENV: production
     env_file:
       - backend/.env
     restart: unless-stopped
-    # MariaDB is external (192.168.0.254) — no DB service needed here
+    # MariaDB is external — no DB service needed here
