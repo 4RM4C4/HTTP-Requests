@@ -18,6 +18,11 @@ User.init({
   passwordHash: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  isAdmin: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   sequelize,

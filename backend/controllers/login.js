@@ -24,6 +24,7 @@ loginRouter.post('/', async (request, response) => {
     const tokenPayload = {
       username: user.username,
       id: user.id,
+      isAdmin: user.isAdmin,
     }
 
     const token = jwt.sign(tokenPayload, config.SECRET)
@@ -31,6 +32,7 @@ loginRouter.post('/', async (request, response) => {
     response.status(200).json({
       token,
       username: user.username,
+      isAdmin: user.isAdmin,
     });
 
   } catch (error) {

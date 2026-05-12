@@ -1,0 +1,14 @@
+**/node_modules
+**/.env
+**/tests
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+.git
+.gitignore
+**/dist
+frontend/src/tests
+README.md
+docker-compose.yml
+.dockerignore

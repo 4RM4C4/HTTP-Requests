@@ -39,7 +39,14 @@ const tokenExtractor = (request, response, next) => {
 const userExtractor = (request, response, next) => {
   const decodedToken = jwt.verify(request.token, config.SECRET)
   if (decodedToken.id) {
-    request.user = decodedToken.id
+    request.user = decodedToken
+  }
+  next()
+}
+
+const adminExtractor = (request, response, next) => {
+  if (!request.user || !request.user.isAdmin) {
+    return response.status(403).json({ error: 'Admin access required' })
   }
   next()
 }
@@ -49,5 +56,6 @@ module.exports = {
   unknownEndpoint,
   errorHandler,
   tokenExtractor,
-  userExtractor
+  userExtractor,
+  adminExtractor,
 }
